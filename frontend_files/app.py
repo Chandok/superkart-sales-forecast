@@ -39,6 +39,7 @@ with tab1:
         store_age = st.number_input("Store Age (years)", min_value=0, value=15)
 
     if st.button("Predict Sales"):
+        st.write("Button clicked!")
         payload = {
             "Product_Weight": product_weight,
             "Product_Sugar_Content": product_sugar_content,
