@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import pandas as pd
 import joblib
+import io
 
 superkart_api = Flask(__name__)
 
@@ -10,14 +11,13 @@ EXPECTED_COLUMNS = [
     "Product_Weight",
     "Product_Sugar_Content",
     "Product_Allocated_Area",
-    "Product_Type",
     "Product_MRP",
-    "Store_Id",
     "Store_Size",
     "Store_Location_City_Type",
     "Store_Type",
-    "Store_Age",
-    "Product_Category",
+    "Product_Id_char",
+    "Store_Age_Years",
+    "Product_Type_Category",
 ]
 
 
@@ -53,17 +53,22 @@ def predict():
 @superkart_api.post("/v1/predictbatch")
 def predict_batch():
     try:
-        data = request.get_json()
-        input_df = pd.DataFrame(data)
+        if "file" not in request.files:
+            return jsonify({"error": "No file uploaded. Expected a 'file' field."}), 400
+
+        uploaded_file = request.files["file"]
+        input_df = pd.read_csv(io.StringIO(uploaded_file.read().decode("utf-8")))
 
         missing_cols = [col for col in EXPECTED_COLUMNS if col not in input_df.columns]
         if missing_cols:
             return jsonify({"error": f"Missing required fields: {missing_cols}"}), 400
 
-        input_df = input_df[EXPECTED_COLUMNS]
-        predictions = model.predict(input_df)
+        input_df_for_prediction = input_df[EXPECTED_COLUMNS]
+        predictions = model.predict(input_df_for_prediction)
 
-        return jsonify({"predictions": predictions.tolist()})
+        input_df["Predicted_Sales_Total"] = predictions
+
+        return input_df.to_csv(index=False), 200, {"Content-Type": "text/csv"}
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
