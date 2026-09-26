@@ -8,6 +8,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py .
 COPY superkart_model.joblib .
 
-EXPOSE 5000
+EXPOSE 7860
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:7860", "--workers", "2", "--timeout", "120", "app:superkart_api"]

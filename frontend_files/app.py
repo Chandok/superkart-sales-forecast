@@ -7,7 +7,7 @@ st.set_page_config(page_title="SuperKart Sales Forecasting", layout="centered")
 st.title("SuperKart Sales Forecasting")
 st.write("Predict product-store sales revenue using the trained model.")
 
-BACKEND_URL = "http://superkart-backend-container:5000/predict"
+BACKEND_URL = "http://localhost:7860/v1/predict"
 
 tab1, tab2 = st.tabs(["Single Prediction", "Batch Prediction"])
 
@@ -55,7 +55,9 @@ with tab1:
         }
 
         try:
-            response = requests.post(BACKEND_URL, json=payload)
+            st.write(f"Calling backend at: {BACKEND_URL}")
+            response = requests.post(BACKEND_URL, json=payload, timeout=10)
+            st.write(f"Response status: {response.status_code}")
             if response.status_code == 200:
                 prediction = response.json()["predictions"][0]
                 st.success(f"Predicted Sales Total: {prediction:.2f}")
@@ -84,7 +86,7 @@ with tab2:
         if st.button("Run Batch Prediction"):
             try:
                 records = batch_df.to_dict(orient="records")
-                response = requests.post(BACKEND_URL, json=records)
+                response = requests.post(BACKEND_URL, json=records, timeout=30)
 
                 if response.status_code == 200:
                     predictions = response.json()["predictions"]

@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import pandas as pd
 import joblib
 
-app = Flask(__name__)
+superkart_api = Flask(__name__)
 
 model = joblib.load("superkart_model.joblib")
 
@@ -21,34 +21,46 @@ EXPECTED_COLUMNS = [
 ]
 
 
-@app.route("/", methods=["GET"])
+@superkart_api.route("/", methods=["GET"])
 def home():
     return jsonify({"message": "SuperKart Sales Forecasting API is running."})
 
 
-@app.route("/health", methods=["GET"])
+@superkart_api.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "healthy"})
 
 
-@app.route("/predict", methods=["POST"])
+@superkart_api.post("/v1/predict")
 def predict():
     try:
         data = request.get_json()
-
-        if isinstance(data, dict):
-            input_df = pd.DataFrame([data])
-        elif isinstance(data, list):
-            input_df = pd.DataFrame(data)
-        else:
-            return jsonify({"error": "Invalid input format. Provide a JSON object or list of objects."}), 400
+        input_df = pd.DataFrame([data])
 
         missing_cols = [col for col in EXPECTED_COLUMNS if col not in input_df.columns]
         if missing_cols:
             return jsonify({"error": f"Missing required fields: {missing_cols}"}), 400
 
         input_df = input_df[EXPECTED_COLUMNS]
+        prediction = model.predict(input_df)
 
+        return jsonify({"prediction": float(prediction[0])})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@superkart_api.post("/v1/predictbatch")
+def predict_batch():
+    try:
+        data = request.get_json()
+        input_df = pd.DataFrame(data)
+
+        missing_cols = [col for col in EXPECTED_COLUMNS if col not in input_df.columns]
+        if missing_cols:
+            return jsonify({"error": f"Missing required fields: {missing_cols}"}), 400
+
+        input_df = input_df[EXPECTED_COLUMNS]
         predictions = model.predict(input_df)
 
         return jsonify({"predictions": predictions.tolist()})
@@ -58,4 +70,4 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    superkart_api.run(host="0.0.0.0", port=7860)

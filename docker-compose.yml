@@ -1,0 +1,14 @@
+services:
+  backend:
+    build: ./backend_files
+    container_name: superkart-backend-container
+    ports:
+      - "7860:7860"
+      - "8501:8501"
+
+  frontend:
+    build: ./frontend_files
+    container_name: superkart-frontend-container
+    network_mode: "service:backend"
+    depends_on:
+      - backend
